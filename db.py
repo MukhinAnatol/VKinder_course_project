@@ -1,6 +1,6 @@
 import sqlalchemy as sq
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 
 '''Работа с БД'''
 
@@ -18,27 +18,22 @@ session = Session()
 engine.connect()
 connection = engine.connect()
 
-
 #Данные пользователя VK бота
 class Userinfo(Base):
     __tablename__ = 'userinfo'
     id = sq.Column(sq.Integer, primary_key=True, autoincrement=True)
     user_name = sq.Column(sq.String)
-    vk_id = sq.Column(sq.Integer, unique=True)
+    vk_id = sq.Column(sq.Integer)
     city_name = sq.Column(sq.String)
     age = sq.Column(sq.Integer)
     sex = sq.Column(sq.Integer)
-    id_match = sq.Column(sq.Integer, sq.ForeignKey('_match.id', ondelete='CASCADE'))
-    id_favourite = sq.Column(sq.Integer, sq.ForeignKey('favourite.id', ondelete='CASCADE'))
-
 
 #Данные найденных пары
 class Match(Base):
     __tablename__ = '_match'
     id = sq.Column(sq.Integer, primary_key=True, autoincrement=True)
-    match_id = sq.Column(sq.Integer, unique=True)
-    id_user = sq.Column(sq.Integer)
-
+    match_id = sq.Column(sq.Integer)
+    id_user = sq.Column(sq.Integer, sq.ForeignKey('userinfo.id', ondelete='CASCADE'))
 
 #Данные пар, добавленных в избранное
 class Favourite(Base):
@@ -49,11 +44,9 @@ class Favourite(Base):
     vk_link = sq.Column(sq.String)
     age = sq.Column(sq.Integer)
     photos = sq.Column(sq.String)
-    id_user = sq.Column(sq.Integer)
-
+    id_user = sq.Column(sq.Integer, sq.ForeignKey('userinfo.id', ondelete='CASCADE'))
 
 '''Функции работы с БД'''
-
 
 #Запрос на получение из БД vk_id пользователя
 def select_from_user():
@@ -66,7 +59,6 @@ def select_from_user():
         id_list.append(one_id)
     return id_list
 
-
 #Запрос на получение из БД id найденной пары с фильтром по vk_id пользователя
 def select_from_match(user_id):
     match_ids = connection.execute(f"""
@@ -75,10 +67,9 @@ def select_from_match(user_id):
     """).fetchall()
     id_list = []
     for item in match_ids:
-        one_id = item[0]
+        one_id = item
         id_list.append(one_id)
     return id_list
-
 
 #Запрос на получение из БД id избранной пары с фильтром по vk_id пользователя
 def check_fav(user_id):
@@ -92,11 +83,14 @@ def check_fav(user_id):
         id_list.append(one_id)
     return id_list
 
-
 #Запрос на получение из БД списка избранных
 def select_all_fav(user_id):
+    db_id = connection.execute(f"""
+                SELECT id FROM userinfo
+                WHERE vk_id = {user_id};
+            """).fetchone()[0]
     favourites = connection.execute(f"""
         SELECT fav_name, vk_link FROM favourite
-        WHERE id_user = {user_id};
+        WHERE id_user = {db_id};
     """).fetchall()
     return favourites

@@ -35,15 +35,16 @@ def get_user_name(user_id):
     return full_name
 
 
-#Поиск пары по параметрам пользователя
+#Поиск других пользователей по параметрам пользователя бота
 def get_match(user):
     user_data = get_user_info(user)
     birthday = user_data[0]['bdate'].split('.')
     age = date.today().year - int(birthday[-1])
     city = user_data[0]['city']['id']
-    if user_data[0]['sex'] == 2:
+    sex = user_data[0]['sex']
+    if sex == 2:
         sex = 1
-    elif user_data[0]['sex'] == 1:
+    elif sex == 1:
         sex = 2
     params = {
         'sort': 0,
@@ -57,27 +58,31 @@ def get_match(user):
         'is_closed': False
     }
     response = vk_my_session.method('users.search', params)
-    match = response['items'][randint(0, int(len(response['items']) - 1))]['id']
-    matches_db = select_from_match(user)
-    if match not in matches_db:
-        return match
-    else:
-        return get_match(user)
+    return response
 
 
 #Поиск фотографий найденной пары
-def get_photos(match):
-    params = {'owner_id': match,
-              'album_id': 'profile',
-              'extended': 1}
-    photos = sorted(vk_my_session.method('photos.get', params)['items'],
-                    key=lambda elem: elem['likes']['count'], reverse=True)[:3]
+def get_photos(user, data):
+    match = data['items'][randint(0, int(len(data['items']) - 1))]['id']
     message_data = {'name': '',
+                    'id': match,
                     'link': None,
                     'photos': []}
-    message_data['name'] = f"{get_user_info(match)[0]['first_name']} {get_user_info(match)[0]['last_name']}"
-    message_data['link'] = 'https://vk.com/id' + str(match)
-    for photo in photos:
-        photo_link = photo['sizes'][-1]['url']
-        message_data['photos'].append(photo_link)
-    return message_data
+    matches_db = select_from_match(user)
+    if match in matches_db:
+        return get_photos(user, data)
+    else:
+        params = {'owner_id': match,
+              'album_id': 'profile',
+              'extended': 1}
+        try:
+            photos = sorted(vk_my_session.method('photos.get', params)['items'],
+                        key=lambda elem: elem['likes']['count'], reverse=True)[:3]
+            message_data['name'] = f"{get_user_info(match)[0]['first_name']} {get_user_info(match)[0]['last_name']}"
+            message_data['link'] = 'https://vk.com/id' + str(match)
+            for photo in photos:
+                photo_attachment = f'photo{str(match)}_{photo["id"]}'
+                message_data['photos'].append(photo_attachment)
+        except (Exception, vk_api.exceptions.ApiError):
+            return get_photos(user, data)
+        return message_data

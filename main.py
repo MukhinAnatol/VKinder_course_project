@@ -12,8 +12,8 @@ longpoll = VkLongPoll(vk_session)
 
 
 #Функция для общения VK бота с пользователем
-def write_msg(user_id, message):
-    vk_session.method('messages.send', {'user_id': user_id, 'message': message,  'random_id': randrange(10 ** 7)})
+def write_msg(user_id, message=None, attachment=None):
+    vk_session.method('messages.send', {'user_id': user_id, 'message': message, 'attachment': attachment, 'random_id': randrange(10 ** 7)})
 
 
 if __name__ == '__main__':
@@ -35,13 +35,16 @@ if __name__ == '__main__':
                 elif request == "далее":
                     user_data = get_user_info(event.user_id)
                     insert_user(event.user_id, user_data)
-                    match = get_match(event.user_id)
+                    matches = get_match(event.user_id)
+                    result = get_photos(event.user_id, matches)
+                    match = result['id']
+                    photos = result['photos']
                     insert_match(event.user_id, match)
-                    photos = get_photos(match)
                     #Выводим пользователю информацию о найденной паре
-                    write_msg(event.user_id, f"{photos['name']}"
-                                             f"\n{photos['link']}"
-                                             f"\n{photos['photos']}")
+                    write_msg(event.user_id, f"{result['name']}"
+                                             f"\n{result['link']}")
+                    for index, item in enumerate(photos):
+                        write_msg(event.user_id, message=None, attachment=photos[index])
                     time.sleep(2)
                     write_msg(event.user_id, f"Команда для продолжения: далее"
                                              f"\nКоманда для добавления в избранное: добавить в избранное"
@@ -49,8 +52,8 @@ if __name__ == '__main__':
                 #Добавляем в избранное
                 elif request == "добавить в избранное":
                     fav_data = get_user_info(match)
-                    result = insert_favourite(event.user_id, match, fav_data, photos)
-                    write_msg(event.user_id, f'{result}')
+                    message = insert_favourite(event.user_id, match, fav_data, photos)
+                    write_msg(event.user_id, f'{message}')
                 #Выводим избранные
                 elif request == "избранные":
                     favourites = select_all_fav(event.user_id)
@@ -60,3 +63,4 @@ if __name__ == '__main__':
                 #Предупреждаем пользователя о неправильной команде
                 else:
                     write_msg(event.user_id, "Не поняла вашего ответа...")
+
