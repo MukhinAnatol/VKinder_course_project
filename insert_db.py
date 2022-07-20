@@ -20,10 +20,9 @@ def insert_user(user_id, data):
 
 #Добавление в таблицу найденных пар для проверки на повторный вывод
 def insert_match(user_id, match):
-    db_id = connection.execute(f"""
-                    SELECT id FROM userinfo
-                    WHERE vk_id = {user_id};
-                """).fetchone()[0]
+    db_id = session.query(Userinfo.id).filter(Userinfo.vk_id == f'{user_id}').one()[0]
+    print(db_id)
+    session.commit()
     matches_db = select_from_match(db_id)
     dublicate_list = []
     for i in matches_db:
@@ -37,10 +36,8 @@ def insert_match(user_id, match):
 
 #Добавление в избранное
 def insert_favourite(user_id, fav, data, photos):
-    db_id = connection.execute(f"""
-                        SELECT id FROM userinfo
-                        WHERE vk_id = {user_id};
-                    """).fetchone()[0]
+    db_id = session.query(Userinfo.id).filter(Userinfo.vk_id == f'{user_id}').one()[0]
+    session.commit()
     favourites = check_fav(db_id)
     if fav not in favourites:
         name = f"{data[0]['first_name']} {data[0]['last_name']}"

@@ -1,13 +1,9 @@
 import sqlalchemy as sq
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+from config import db_user, password, db_name
 
 '''Работа с БД'''
-
-#Имя пользователя БД, его пароль и название БД
-db_user = ''
-password = ''
-db_name = ''
 
 #Подключение к БД
 db = f'postgresql://{db_user}:{password}@localhost:5432/{db_name}'
@@ -50,9 +46,8 @@ class Favourite(Base):
 
 #Запрос на получение из БД vk_id пользователя
 def select_from_user():
-    users_id = connection.execute("""
-        SELECT vk_id FROM userinfo;
-    """).fetchall()
+    users_id = session.query(Userinfo.vk_id).all()
+    session.commit()
     id_list = []
     for item in users_id:
         one_id = item[0]
@@ -61,10 +56,8 @@ def select_from_user():
 
 #Запрос на получение из БД id найденной пары с фильтром по vk_id пользователя
 def select_from_match(user_id):
-    match_ids = connection.execute(f"""
-        SELECT match_id FROM _match
-        WHERE id_user = {user_id};
-    """).fetchall()
+    match_ids = session.query(Match.match_id).filter(Match.id_user == f'{user_id}').all()
+    session.commit()
     id_list = []
     for item in match_ids:
         one_id = item
@@ -73,10 +66,8 @@ def select_from_match(user_id):
 
 #Запрос на получение из БД id избранной пары с фильтром по vk_id пользователя
 def check_fav(user_id):
-    fav_ids = connection.execute(f"""
-        SELECT vk_id FROM favourite
-        WHERE id_user = {user_id};
-    """).fetchall()
+    fav_ids = session.query(Favourite.vk_id).filter(Favourite.id_user == f'{user_id}').all()
+    session.commit()
     id_list = []
     for item in fav_ids:
         one_id = item[0]
@@ -85,12 +76,9 @@ def check_fav(user_id):
 
 #Запрос на получение из БД списка избранных
 def select_all_fav(user_id):
-    db_id = connection.execute(f"""
-                SELECT id FROM userinfo
-                WHERE vk_id = {user_id};
-            """).fetchone()[0]
-    favourites = connection.execute(f"""
-        SELECT fav_name, vk_link FROM favourite
-        WHERE id_user = {db_id};
-    """).fetchall()
+    db_id = session.query(Userinfo.id).filter(Userinfo.vk_id == f'{user_id}').one()[0]
+    favourites = session.query(Favourite.fav_name,Favourite.vk_link).filter(Favourite.id_user == f'{db_id}').all()
+    session.commit()
     return favourites
+
+

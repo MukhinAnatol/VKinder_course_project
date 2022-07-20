@@ -10,7 +10,6 @@ import time
 
 longpoll = VkLongPoll(vk_session)
 
-
 #Функция для общения VK бота с пользователем
 def write_msg(user_id, message=None, attachment=None):
     vk_session.method('messages.send', {'user_id': user_id, 'message': message, 'attachment': attachment, 'random_id': randrange(10 ** 7)})

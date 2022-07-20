@@ -1,14 +1,12 @@
 import vk_api
 from random import randint
+from config import community_token, my_token
 from db import select_from_match
 from datetime import date
 
 '''Функции поиска и сбора информации'''
 
 #Работа с vk_api
-community_token = "vk1.a.3jyrkg3Nhk4jzRbFz3A2DlfNNarrn8Z-wdis4HYB-XG1UzFQx06EZ9GivlUvWus2j0EKWjgcnWV555THEVKFKKAH9lK3OWrjYdZVoFUVuXMPXhbjaY53O9D8RBedqKIaC6a0bhwXYg3KBj9HZW6MIkXMnjCr6nBP_OlOnUnMEnPhTjE_KC8KUyCFRJhhNPdO"
-my_token = ""
-
 vk_session = vk_api.VkApi(token=community_token)
 vk_my_session = vk_api.VkApi(token=my_token)
 session_api = vk_session.get_api()
